@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:padding="24dp" android:gravity="center_horizontal" android:layout_width="match_parent" android:layout_height="match_parent">
+    <TextView android:text="TRT Cast" android:textSize="32sp" android:textStyle="bold" android:layout_marginTop="40dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/status" android:text="Ready" android:textSize="16sp" android:layout_marginTop="16dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+    <Button android:id="@+id/start" android:text="START CAST" android:layout_marginTop="32dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <Button android:id="@+id/stop" android:text="STOP CAST" android:enabled="false" android:layout_marginTop="12dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/address" android:text="" android:textSize="14sp" android:layout_marginTop="24dp" android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:text="First test: open the shown URL on another device on the same Wi‑Fi. CarPlay/Android Auto integration requires a compatible car-side receiver/API and is not created by this phone app alone." android:textSize="13sp" android:layout_marginTop="24dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+</LinearLayout>
