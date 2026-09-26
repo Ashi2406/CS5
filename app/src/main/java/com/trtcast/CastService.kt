@@ -58,7 +58,7 @@ class CastService : Service() {
         private val clients = CopyOnWriteArrayList<OutputStream>()
         private var latest: ByteArray? = null
         private val lock = Object()
-        fun stop() { running = false; interrupt(); clients.forEach { try { it.close() } catch(_:Exception){} } }
+        fun stopCasting() { running = false; interrupt(); clients.forEach { try { it.close() } catch(_:Exception){} } }
         fun publish(image: android.media.Image) {
             val p = image.planes[0]; val buf = p.buffer; val bytes = ByteArray(buf.remaining()); buf.get(bytes)
             // Raw RGBA -> JPEG conversion is intentionally left to a Bitmap worker in the next build.
