@@ -40,11 +40,11 @@ class CastService : Service() {
         val data = intent.getParcelableExtra<Intent>("data")
             ?: return START_NOT_STICKY
 
-        val mgr = getSystemService(
+        val manager = getSystemService(
             MEDIA_PROJECTION_SERVICE
         ) as MediaProjectionManager
 
-        projection = mgr.getMediaProjection(code, data)
+        projection = manager.getMediaProjection(code, data)
 
         startCapture()
 
@@ -73,6 +73,7 @@ class CastService : Service() {
                     ?: return@setOnImageAvailableListener
 
                 try {
+
                     val plane = image.planes[0]
 
                     val pixelStride = plane.pixelStride
@@ -91,40 +92,47 @@ class CastService : Service() {
                     )
 
                     val buffer = plane.buffer
+
                     bitmap.copyPixelsFromBuffer(buffer)
 
-                    val cropped = if (bitmapWidth != width) {
-                        Bitmap.createBitmap(
-                            bitmap,
-                            0,
-                            0,
-                            width,
-                            height
-                        )
-                    } else {
-                        bitmap
-                    }
+                    val croppedBitmap =
+                        if (bitmapWidth != width) {
 
-                    val output = ByteArrayOutputStream()
+                            Bitmap.createBitmap(
+                                bitmap,
+                                0,
+                                0,
+                                width,
+                                height
+                            )
 
-                    cropped.compress(
+                        } else {
+                            bitmap
+                        }
+
+                    val output =
+                        ByteArrayOutputStream()
+
+                    croppedBitmap.compress(
                         Bitmap.CompressFormat.JPEG,
                         60,
                         output
                     )
 
-                    val jpeg = output.toByteArray()
+                    server?.publish(
+                        output.toByteArray()
+                    )
 
-                    server?.publish(jpeg)
-
-                    if (cropped !== bitmap) {
-                        cropped.recycle()
+                    if (croppedBitmap !== bitmap) {
+                        croppedBitmap.recycle()
                     }
 
                     bitmap.recycle()
 
                 } catch (_: Exception) {
+
                 } finally {
+
                     image.close()
                 }
 
@@ -197,7 +205,9 @@ class CastService : Service() {
             Notification.Builder(this, "cast")
                 .setContentTitle("TRT Cast is active")
                 .setContentText("Screen casting is running")
-                .setSmallIcon(android.R.drawable.ic_menu_share)
+                .setSmallIcon(
+                    android.R.drawable.ic_menu_share
+                )
                 .build()
 
         } else {
@@ -205,7 +215,9 @@ class CastService : Service() {
             Notification.Builder(this)
                 .setContentTitle("TRT Cast is active")
                 .setContentText("Screen casting is running")
-                .setSmallIcon(android.R.drawable.ic_menu_share)
+                .setSmallIcon(
+                    android.R.drawable.ic_menu_share
+                )
                 .build()
         }
     }
@@ -245,7 +257,8 @@ class MjpegServer(
 
             while (running) {
 
-                val socket = serverSocket!!.accept()
+                val socket = serverSocket?.accept()
+                    ?: break
 
                 thread(
                     start = true,
@@ -256,6 +269,7 @@ class MjpegServer(
             }
 
         } catch (_: Exception) {
+
         }
     }
 
@@ -268,9 +282,9 @@ class MjpegServer(
             val input = socket.getInputStream()
             val output = socket.getOutputStream()
 
-            val buffer = ByteArray(4096)
+            val requestBuffer = ByteArray(4096)
 
-            input.read(buffer)
+            input.read(requestBuffer)
 
             val header =
                 "HTTP/1.1 200 OK\r\n" +
@@ -287,7 +301,7 @@ class MjpegServer(
 
             while (running && !socket.isClosed) {
 
-                val frame: ByteArray
+                var frame: ByteArray? = null
 
                 synchronized(frameLock) {
 
@@ -298,23 +312,36 @@ class MjpegServer(
                         frameLock.wait(2000)
                     }
 
-                    if (!running) break
+                    if (running) {
 
-                    frame = latestFrame?.copyOf()
-                        ?: continue
+                        frame = latestFrame?.copyOf()
 
-                    sentFrame = frameNumber
+                        sentFrame = frameNumber
+                    }
                 }
+
+                if (!running) {
+                    break
+                }
+
+                val currentFrame = frame ?: continue
 
                 val partHeader =
                     "--frame\r\n" +
                     "Content-Type: image/jpeg\r\n" +
-                    "Content-Length: ${frame.size}\r\n" +
+                    "Content-Length: ${currentFrame.size}\r\n" +
                     "\r\n"
 
-                output.write(partHeader.toByteArray())
-                output.write(frame)
-                output.write("\r\n".toByteArray())
+                output.write(
+                    partHeader.toByteArray()
+                )
+
+                output.write(currentFrame)
+
+                output.write(
+                    "\r\n".toByteArray()
+                )
+
                 output.flush()
             }
 
